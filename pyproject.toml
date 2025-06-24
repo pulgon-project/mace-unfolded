@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mace_unfolded"
+authors = [
+    { name = "Sandro Wieser", email = "sandro.wieser@tuwien.ac.at" },
+]
+description = "Extension of mace to allow for unfolded graphs in order to efficiently compute properties like the heat flux"
+license = { text = "Apache License 2.0" }
+requires-python = ">=3.8"
+dependencies = [
+    "ase",
+    "numpy",
+    "scipy",
+    "tqdm"
+]
+readme = "README.md"
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.dynamic]
+version = {attr = "mace_unfolded.__version__"}
+
+[project.scripts]
+perform_mace_green_kubo = "mace_unfolded.scripts.perform_mace_green_kubo:main"
