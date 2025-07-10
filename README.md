@@ -58,13 +58,13 @@ Note, that what is obtained here is only the potential flux. For fluids or any s
 
 #### Exploiting gauge invariance to reduce the level of noise
 
-The `compute_heat` function also computes the average virial $sigma_i$ for each atom which allows to subtract the non-contributing parts of the potential heat flux.
+The `compute_heat` function also computes the average virial $\sigma_i$ for each atom which allows to subtract the non-contributing parts of the potential heat flux.
 
 ```math
 J_\mathrm{gf}(t) = J_\mathrm{raw} - \frac{1}{V}\sum_i\left< \sigma_i \right>_t\mathbf{v}_i.
 ```
 
-The atomic virial is computed in a way that its product with the atomic velocities results in the total heat flux at each individual time step. When opening the file `sigma.dat` in the output directory contains the values of $sigma_i$ for each atom and the number of values depends on the dimensionality of the system. Due to the way the unfolding works, several atomic indices occur multiple times. However, these are effectively just periodic images and for the evaluation of the heat flux contributions the same velocities should be used. Use the script `gauge_fix_flux` to apply the correction to a heat flux file using the velocity from a lammps trajectory. 
+The atomic virial is computed in a way that its product with the atomic velocities results in the total heat flux at each individual time step. When opening the file `sigma.dat` in the output directory contains the values of $\sigma_i$ for each atom and the number of values depends on the dimensionality of the system. Due to the way the unfolding works, several atomic indices occur multiple times. However, these are effectively just periodic images and for the evaluation of the heat flux contributions the same velocities should be used. Use the script `gauge_fix_flux` to apply the correction to a heat flux file using the velocity from a lammps trajectory. 
 
 For some literature regarding the gauge invariance, see [Ercole et al.](https://pubs.acs.org/doi/10.1021/acs.jctc.9b01174) and for an application of an implementation such as this one, see [Knoop et al.](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.107.224304).
 
