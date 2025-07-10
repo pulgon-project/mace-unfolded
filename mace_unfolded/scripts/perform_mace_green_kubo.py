@@ -75,28 +75,6 @@ class lammps_dump_reader:
             raise StopIteration
         return line
 
-    def switch_atom_types(self, atoms):
-        # only works for 2 different atom types - switches the first 2 of them.
-        # accounts for the momentum based velocities
-        atnums = atoms.get_atomic_numbers()
-        unique_atom_types = np.unique(atnums)
-        if len(unique_atom_types) == 2:
-            velocities = atoms.get_velocities()
-
-            first_indices = np.where(atnums == unique_atom_types[0])[0]
-            second_indices = np.where(atnums == unique_atom_types[1])[0]
-            old_symbols = np.array(atoms.get_chemical_symbols())
-            new_symbols = np.array(atoms.get_chemical_symbols())
-            new_symbols[first_indices] = old_symbols[second_indices][0]
-            new_symbols[second_indices] = old_symbols[first_indices][0]
-            atoms.set_chemical_symbols(new_symbols)
-            new_numbers = atnums
-            new_numbers[first_indices] = unique_atom_types[1]
-            new_numbers[second_indices] = unique_atom_types[0]
-            atoms.set_atomic_numbers(new_numbers)
-            atoms.set_velocities(velocities)
-            ase.io.write("POSCAR_fixed", atoms, format="vasp")
-        return atoms
 
     def __next__(self):
         self.rline()
@@ -359,7 +337,6 @@ def perform_GK_simulation(
     from_lammps_traj=None,
     ase_reader=False,
     full_sigma=False,
-    switch_atom_types=False,
 ):
     # argparse is not good enough for booleans
     if isinstance(PBC[0], str):
@@ -551,27 +528,6 @@ def perform_GK_simulation(
                 sigma_dict=sigma_dict,
             )
         for atoms in tqdm(traj):
-            # TODO: allow for restart
-            # TODO: remove the swith atom types feature for the final release
-            if switch_atom_types:
-                atnums = atoms.get_atomic_numbers()
-                unique_atom_types = np.unique(atnums)
-                if len(unique_atom_types) == 2:
-                    velocities = atoms.get_velocities()
-
-                    first_indices = np.where(atnums == unique_atom_types[0])[0]
-                    second_indices = np.where(atnums == unique_atom_types[1])[0]
-                    old_symbols = np.array(atoms.get_chemical_symbols())
-                    new_symbols = np.array(atoms.get_chemical_symbols())
-                    new_symbols[first_indices] = old_symbols[second_indices][0]
-                    new_symbols[second_indices] = old_symbols[first_indices][0]
-                    atoms.set_chemical_symbols(new_symbols)
-                    new_numbers = atnums
-                    new_numbers[first_indices] = unique_atom_types[1]
-                    new_numbers[second_indices] = unique_atom_types[0]
-                    atoms.set_atomic_numbers(new_numbers)
-                    atoms.set_velocities(velocities)
-                    ase.io.write("POSCAR_fixed", atoms, format="vasp")
 
             compute_heat(
                 current_atoms=atoms,
@@ -684,7 +640,7 @@ def main():
         dest="ase_reader",
         action="store_true",
         default=False,
-        help="disable ASE reader to save memory",
+        help="enable ASE reader",
     )
     parser.add_argument(
         "--full_sigma",
@@ -692,13 +648,6 @@ def main():
         action="store_true",
         default=False,
         help="output sigma step-by-step",
-    )
-    parser.add_argument(
-        "--switch_atom_types",
-        dest="switch_atom_types",
-        action="store_true",
-        default=False,
-        help="if there are only 2 atom types, exchange their positions",
     )
 
     parser.add_argument("model_file", help="file name for the model parameters")

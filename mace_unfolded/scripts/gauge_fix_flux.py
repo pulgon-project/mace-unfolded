@@ -26,10 +26,11 @@ import argparse
 
 
 def perform_fix(
-    flux_file, trajectory_file, sigma_avg_file, fixed_flux_file, invariant_terms_file=None
+    flux_file, trajectory_file, sigma_avg_file, fixed_flux_file, invariant_terms_file=None, num_dim=1
 ):
-
-    num_dim = 1
+    """
+    currently implemented for the 1D case
+    """
     sigma_data = np.loadtxt(sigma_avg_file, skiprows=1)
     heat_flux = np.loadtxt(flux_file, skiprows=1)
     temperatures = heat_flux[:, 0]
@@ -86,7 +87,7 @@ def main():
         dest="flux_file",
         type=str,
         default="flux_files_unf/heat_flux.dat",
-        help="file containing the flux values (non-convective part) from the MD run",
+        help="file containing the flux values (full flux, including convective part) from the MD run",
     )
 
     parser.add_argument(
@@ -111,6 +112,14 @@ def main():
         type=str,
         default=None,
         help="output file name of the invariant flux contribution",
+    )
+
+    parser.add_argument(
+        "--num_dim",
+        dest="num_dim",
+        type=int,
+        default=1,
+        help="number of dimensions of the flux",
     )
 
     args = parser.parse_args()

@@ -13,7 +13,6 @@
 # permissions and limitations under the License.
 
 import torch
-import functorch
 
 from ase.calculators.calculator import Calculator, all_changes
 from ase.stress import full_3x3_to_voigt_6_stress
@@ -22,12 +21,8 @@ from ase import units
 from mace.calculators import MACECalculator
 from mace import data
 from mace.tools import torch_geometric
-from mace.modules.utils import get_edge_vectors_and_lengths
 
 from mace_unfolded.unfolded_heat.comms import comms
-
-
-# from mace_unfolded.unfolded_heat.mace_dist_wrapper import MACEDistWrapper
 
 
 class MACE_flux_calculator(MACECalculator):
