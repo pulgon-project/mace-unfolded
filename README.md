@@ -1,6 +1,6 @@
 # mace-unfolded
 
-Contains calculators for computing the heat flux for MACE. 
+Contains calculators for computing the heat flux for MACE. Additionally, features some convenient command line tools for MACE potentials.
 
 The unfolder was originally written for the publication "Marcel F. Langer, Florian Knoop, Christian Carbogno, Matthias Scheffler, and Matthias Rupp
 Phys. Rev. B 108, L100302" and adapted for use with MACE.
@@ -61,7 +61,7 @@ Note, that what is obtained here is only the potential flux. For fluids or any s
 The `compute_heat` function also computes the average virial $\sigma_i$ for each atom which allows to subtract the non-contributing parts of the potential heat flux.
 
 ```math
-J_\mathrm{gf}(t) = J_\mathrm{raw} - \frac{1}{V}\sum_i\left< \sigma_i \right>_t\mathbf{v}_i.
+\mathbf{J}_\mathrm{gf}(t) = \mathbf{J}_\mathrm{raw} - \frac{1}{V}\sum_i\left< \sigma_i \right>_t\mathbf{v}_i.
 ```
 
 The atomic virial is computed in a way that its product with the atomic velocities results in the total heat flux at each individual time step. When opening the file `sigma.dat` in the output directory contains the values of $\sigma_i$ for each atom and the number of values depends on the dimensionality of the system. Due to the way the unfolding works, several atomic indices occur multiple times. However, these are effectively just periodic images and for the evaluation of the heat flux contributions the same velocities should be used. Use the script `gauge_fix_flux` to apply the correction to a heat flux file using the velocity from a lammps trajectory. 
@@ -81,7 +81,7 @@ For more details regarding these equations, see [Langer et al.](https://link.aps
 Set `full_semilocal_flux=True` when creating the calculator object.
 
 ```math
-J_\mathrm{pot} = \sum_{ijk} \mathbf{r}_{ji} \left[ \left( \frac{\partial U_i}{\partial \mathbf{r}_{kj}} - \frac{\partial U_i}{\partial \mathbf{r}_{jk}} \right) \cdot \mathbf{v}_j \right]
+\mathbf{J}_\mathrm{pot} = \sum_{ijk} \mathbf{r}_{ji} \left[ \left( \frac{\partial U_i}{\partial \mathbf{r}_{kj}} - \frac{\partial U_i}{\partial \mathbf{r}_{jk}} \right) \cdot \mathbf{v}_j \right]
 ```
 
 Where the indices $i$ and $j$ run over all atoms and $k$ over the neighborhood of atom $j$. This equation is very expensive to evaluate.
@@ -91,7 +91,7 @@ Where the indices $i$ and $j$ run over all atoms and $k$ over the neighborhood o
 This implements the equation for the local flux set by `full_local_flux=True` and `full_semilocal_flux=False`.
 
 ```math
-J_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \mathbf{r}_{jk}}  \cdot \mathbf{v}_k \right)
+\mathbf{J}_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \mathbf{r}_{jk}}  \cdot \mathbf{v}_k \right)
 ```
 
 #### Method 3:
@@ -99,5 +99,17 @@ J_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \
 Another local variant set by calling `init_full_local_flux` and `slow_method=True`.
 
 ```math
-J_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \mathbf{r}_{k}}  \cdot \mathbf{v}_k \right)
+\mathbf{J}_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \mathbf{r}_{k}}  \cdot \mathbf{v}_k \right)
 ```
+
+### Command line tools
+
+#### Compute phonons with MACE with phonopy
+
+The command line tool to use is `compute_mace_phonons`. Alternatively, the function `mace_unfolded.scripts.compute_mace_phonons.compute_phonons` can be imported and used directly in python. The script interfaces with phonopy and computes the phonons for the `POSCAR` file in the current working directory: 
+
+```bash
+compute_mace_phonons $MACE_MODEL_FILE --supercell 2 2 2 --relax
+```
+
+If `--relax` is used, `POSCAR_relaxed` is generated with the internal coordinates optimized, copy it to `POSCAR` for further analysis using phonopy with the `force_constants.hdf5` file that was output. With `--ddist` the displacement distance can be set and `--autodiff` computes the force constants analytically with automatic differentiation. Use `--help` for more information regarding the possible options.
