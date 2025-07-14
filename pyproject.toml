@@ -28,3 +28,4 @@ version = {attr = "mace_unfolded.__version__"}
 [project.scripts]
 perform_mace_green_kubo = "mace_unfolded.scripts.perform_mace_green_kubo:main"
 gauge_fix_flux = "mace_unfolded.scripts.gauge_fix_flux:main"
+compute_mace_phonons = "mace_unfolded.scripts.compute_mace_phonons:main"
