@@ -27,7 +27,7 @@ It is helpful to use the `cuequivariance` package for acceleration. The code wil
 The easiest way the unfolded calculator can be used is from a lammps trajectory file. The advantage is that the heat flux does not have to be computed at every timestep.
 
 ```bash
-perform_mace_green_kubo.py <model_file_name> --flux_dir <output_directory_name> --from_lammps_traj <trajectory_file_name> --pbc F F T --dtype float64
+mace_perform_green_kubo <model_file_name> --flux_dir <output_directory_name> --from_lammps_traj <trajectory_file_name> --pbc F F T --dtype float64
 ```
 
 The periodic boundary conditions `--pbc` determine in which directions the unfolding is being performed and how many components of the heat flux are calculated and output in files. The script uses a very simple file reader of the lammps dump file. It strictly requires the fields `atom id, element, x, y, z, vx, vy, vz` as the dump contents. There is an alternative more flexible option to use the ASE reader to read the trajectory files using the option `--ase_reader`. However, ASE reads the entire trajectory into the RAM while the internal reader reads the trajectory on-the-fly. Use `--help` for more information regarding the possible options. However, most options are only relevant when directly carrying out the molecular dynamics simulation with an ASE calculator.
@@ -109,7 +109,13 @@ Another local variant set by calling `init_full_local_flux` and `slow_method=Tru
 The command line tool to use is `compute_mace_phonons`. Alternatively, the function `mace_unfolded.scripts.compute_mace_phonons.compute_phonons` can be imported and used directly in python. The script interfaces with phonopy and computes the phonons for the `POSCAR` file in the current working directory: 
 
 ```bash
-compute_mace_phonons $MACE_MODEL_FILE --supercell 2 2 2 --relax
+mace_compute_phonons $MACE_MODEL_FILE --supercell 2 2 2 --relax
 ```
 
-If `--relax` is used, `POSCAR_relaxed` is generated with the internal coordinates optimized, copy it to `POSCAR` for further analysis using phonopy with the `force_constants.hdf5` file that was output. With `--ddist` the displacement distance can be set and `--autodiff` computes the force constants analytically with automatic differentiation. Use `--help` for more information regarding the possible options.
+If `--relax` is used, `POSCAR_relaxed` is generated with the internal coordinates optimized, copy it to `POSCAR` for further analysis using phonopy with the `force_constants.hdf5` file that was output. With `--ddist` the displacement distance can be set and `--autodiff` computes the force constants analytically with automatic differentiation. Use `--help` for more information regarding the possible options. If a box relaxation should be performed, use the script:
+
+```bash
+mace_relax $MACE_MODEL_FILE --box --struct POSCAR
+```
+
+With `--box_mask` additional constraints can be set which dimensions are optimized using `T` or `F` for each element of the strain tensor.
