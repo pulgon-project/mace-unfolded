@@ -174,8 +174,6 @@ class UnfoldedHeatFluxCalculator:
         batch = next(iter(data_loader)).to(self.device)
 
         # just to obtain proper atomic energies
-        # I think this makes no sense. The offset was already considered in the model.
-        # node_e0 = self.model.atomic_energies_fn(batch["node_attrs"])
 
         batch_dict = batch.to_dict()
         #### COMPUTATION

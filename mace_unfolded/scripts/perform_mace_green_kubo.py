@@ -75,7 +75,6 @@ class lammps_dump_reader:
             raise StopIteration
         return line
 
-
     def __next__(self):
         self.rline()
         tstep = int(self.rline())
@@ -85,7 +84,7 @@ class lammps_dump_reader:
         cell_block = []
         for i in range(3):
             cell_block.append(np.array(list(map(float, self.rline().split()))))
-        # technically it would be nice to parse this. Currently hardcoded ordering: atom id, element, x, y, z, vx, vy, vz
+        # It would be nice to parse this. Currently hardcoded ordering: atom id, element, x, y, z, vx, vy, vz
         self.rline()
         elements = []
         self.velocities = np.zeros((natoms, 3))
@@ -97,8 +96,6 @@ class lammps_dump_reader:
             self.velocities[i] = np.array(list(map(float, line[5:8])))
 
         cell_matrix = np.zeros((3, 3))
-        # why did they have to make this this complicated - just leads to stupid errors
-        # they write it is convenient for visualization programs, but it is VERY inconvenient for the human eye
         if len(cell_block[0]) > 2:
             yli = [0, cell_block[2][2]]
             xli = [
@@ -123,7 +120,7 @@ class lammps_dump_reader:
             cell_matrix[0, 1] = cell_block[0][2]
             cell_matrix[0, 2] = cell_block[1][2]
             cell_matrix[1, 2] = cell_block[2][2]
-        # convert velocities from the very reasonable metal units into those silly ASE units
+        # convert velocities from metal units into ASE units
         self.cell = cell_matrix
         self.symbols = elements
         atoms = Atoms(
@@ -136,7 +133,6 @@ class lammps_dump_reader:
             if self.first_atoms is not None:
                 displacement = atoms.get_positions() - self.first_atoms.get_positions()
                 frac = np.dot(displacement, np.linalg.inv(self.cell)).round()
-                # print(np.sum(frac!=0))
                 displacement = np.dot(frac, self.cell)
                 self.positions = self.positions - displacement
                 atoms.positions = self.positions
