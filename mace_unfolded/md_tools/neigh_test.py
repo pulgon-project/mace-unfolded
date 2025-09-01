@@ -456,17 +456,7 @@ def main():
 
     reporter.done()
 
-    # print(batch_dict.keys())
-    # for key in batch_dict.keys():
-    #     print(key)
-    #     print(batch_dict[key])
-    #     print(batch_dict[key].size())
-
-    # test model
-    # reporter.step("load model")
     model.to("cuda")
-    # reporter.step("model_to_cueq")
-    # model = run_e3nn_to_cueq(model, device="cuda").to("cuda")
     for param in model.parameters():
         param.requires_grad = False
     out = model(
