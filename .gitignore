@@ -198,3 +198,5 @@ build/
 flux_*/
 *.png
 *.pdf
+
+.vscode
