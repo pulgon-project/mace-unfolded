@@ -201,92 +201,90 @@ def compute_heat(
             hfp.write(wstr)
 
         # sigma processing
-        idx = unf_calc.unfolder.unfolding.idx
-        full_indices = np.concatenate((np.array(range(len(current_atoms))), idx))
-        directions = unf_calc.unfolder.unfolding.directions
-        replica_offsets = unf_calc.unfolder.unfolding.replica_offsets
-        sigma = unf_calc.results["sigma"]
-        if "sigma_full_file_name" in sigma_dict.keys():
-            wstr = "\n"
-            for i in range(len(sigma)):
-                wstr += "%6d " % full_indices[i]
-                for j in range(len(sigma[i])):
-                    for k in range(len(sigma[i][j])):
-                        wstr += "%18.12f " % sigma[i][j][k]
-                wstr += "\n"
-            with open(sigma_dict["sigma_full_file_name"], "a") as hfp:
-                hfp.write(wstr)
-        # I guess it makes sense to create some index independent on the ordering. Using idx plus directions? I think replica offsets should not be so important here.
-        uind = idx + len(current_atoms) * directions
-        if "uinds" not in sigma_dict.keys():
-            sigma_dict["uinds"] = uind
-        else:
-            if len(sigma_dict["uinds"]) != len(uind):
-                sigma_dict["uinds"] = np.append(
-                    sigma_dict["uinds"], uind[~np.isin(uind, sigma_dict["uinds"])]
-                )
-                # print("newinds", len(sigma_dict["uinds"]))
-            elif not np.allclose(sigma_dict["uinds"], uind):
-                sigma_dict["uinds"] = np.append(
-                    sigma_dict["uinds"], uind[~np.isin(uind, sigma_dict["uinds"])]
-                )
-                # print("newinds", len(sigma_dict["uinds"]))
-        actinds = np.concatenate(
-            (
-                np.array(range(len(current_atoms))),
-                np.array([np.where(sigma_dict["uinds"] == i)[0][0] for i in uind])
-                + len(current_atoms),
-            )
-        )
-        # print(len(current_atoms),len(actinds))
-        if "N" not in sigma_dict.keys():
-            sigma_dict["N"] = np.ones(len(sigma))
-        else:
-            sigma_dict["N"] += 1
-
-        if "sigma_sum" not in sigma_dict.keys():
-            sigma_dict["sigma_sum"] = sigma
-        else:
-            lendiff = (len(current_atoms) + len(sigma_dict["uinds"])) - len(
-                sigma_dict["sigma_sum"]
-            )
-            if lendiff != 0:
-                sigma_dict["sigma_sum"] = np.concatenate(
-                    (
-                        sigma_dict["sigma_sum"],
-                        np.zeros(
-                            (
-                                lendiff,
-                                sigma_dict["sigma_sum"].shape[1],
-                                sigma_dict["sigma_sum"].shape[2],
-                            )
-                        ),
-                    ),
-                    axis=0,
-                )
-                sigma_dict["N"] = np.append(sigma_dict["N"], np.ones(lendiff))
-            sigma_dict["sigma_sum"][actinds] += sigma
-
-        if sigma_dict["N"][0] % sigma_dict["sigma_output_freq"] == 0:
-            all_inds = np.concatenate(
-                (np.array(range(len(current_atoms))), sigma_dict["uinds"])
-            )
-            with open(sigma_dict["sigma_file_name"], "w") as hfp:
-                sigma_avg = (
-                    sigma_dict["sigma_sum"] / sigma_dict["N"][:, np.newaxis, np.newaxis]
-                )
+        if "sigma" in unf_calc.results.keys():
+            idx = unf_calc.unfolder.unfolding.idx
+            full_indices = np.concatenate((np.array(range(len(current_atoms))), idx))
+            directions = unf_calc.unfolder.unfolding.directions
+            replica_offsets = unf_calc.unfolder.unfolding.replica_offsets
+            sigma = unf_calc.results["sigma"]
+            if "sigma_full_file_name" in sigma_dict.keys():
                 wstr = "\n"
-                for i in range(len(sigma_avg)):
-                    wstr += "%6d " % (all_inds[i] % len(current_atoms))
-                    for j in range(len(sigma_avg[i])):
-                        for k in range(len(sigma_avg[i][j])):
-                            wstr += "%18.12f " % sigma_avg[i][j][k]
+                for i in range(len(sigma)):
+                    wstr += "%6d " % full_indices[i]
+                    for j in range(len(sigma[i])):
+                        for k in range(len(sigma[i][j])):
+                            wstr += "%18.12f " % sigma[i][j][k]
                     wstr += "\n"
-                hfp.write(wstr)
+                with open(sigma_dict["sigma_full_file_name"], "a") as hfp:
+                    hfp.write(wstr)
+            uind = idx + len(current_atoms) * directions
+            if "uinds" not in sigma_dict.keys():
+                sigma_dict["uinds"] = uind
+            else:
+                if len(sigma_dict["uinds"]) != len(uind):
+                    sigma_dict["uinds"] = np.append(
+                        sigma_dict["uinds"], uind[~np.isin(uind, sigma_dict["uinds"])]
+                    )
+                elif not np.allclose(sigma_dict["uinds"], uind):
+                    sigma_dict["uinds"] = np.append(
+                        sigma_dict["uinds"], uind[~np.isin(uind, sigma_dict["uinds"])]
+                    )
+            actinds = np.concatenate(
+                (
+                    np.array(range(len(current_atoms))),
+                    np.array([np.where(sigma_dict["uinds"] == i)[0][0] for i in uind])
+                    + len(current_atoms),
+                )
+            )
+            if "N" not in sigma_dict.keys():
+                sigma_dict["N"] = np.ones(len(sigma))
+            else:
+                sigma_dict["N"] += 1
+
+            if "sigma_sum" not in sigma_dict.keys():
+                sigma_dict["sigma_sum"] = sigma
+            else:
+                lendiff = (len(current_atoms) + len(sigma_dict["uinds"])) - len(
+                    sigma_dict["sigma_sum"]
+                )
+                if lendiff != 0:
+                    sigma_dict["sigma_sum"] = np.concatenate(
+                        (
+                            sigma_dict["sigma_sum"],
+                            np.zeros(
+                                (
+                                    lendiff,
+                                    sigma_dict["sigma_sum"].shape[1],
+                                    sigma_dict["sigma_sum"].shape[2],
+                                )
+                            ),
+                        ),
+                        axis=0,
+                    )
+                    sigma_dict["N"] = np.append(sigma_dict["N"], np.ones(lendiff))
+                sigma_dict["sigma_sum"][actinds] += sigma
+
+            if sigma_dict["N"][0] % sigma_dict["sigma_output_freq"] == 0:
+                all_inds = np.concatenate(
+                    (np.array(range(len(current_atoms))), sigma_dict["uinds"])
+                )
+                with open(sigma_dict["sigma_file_name"], "w") as hfp:
+                    sigma_avg = (
+                        sigma_dict["sigma_sum"]
+                        / sigma_dict["N"][:, np.newaxis, np.newaxis]
+                    )
+                    wstr = "\n"
+                    for i in range(len(sigma_avg)):
+                        wstr += "%6d " % (all_inds[i] % len(current_atoms))
+                        for j in range(len(sigma_avg[i])):
+                            for k in range(len(sigma_avg[i][j])):
+                                wstr += "%18.12f " % sigma_avg[i][j][k]
+                        wstr += "\n"
+                    hfp.write(wstr)
+
         unf_calc.reporter.done()
         if verbose:
             print("Full unfolding time: ", time.time() - t1)
-        # heat_out_timer += time.time()-t2
 
 
 def time_tracker(current_atoms, current_integrator, prev_time):
@@ -459,9 +457,25 @@ def perform_GK_simulation(
         print(
             "WARNING: ensemble mode not yet supported for the UnfoldedHeatFluxCalculator"
         )
-    unf_calc = UnfoldedHeatFluxCalculator(
-        model, device=device, verbose=verbose, dtype=dtype, forward=False, pbc=PBC
-    )
+    num_message_passing_layers = int(model.get_buffer("num_interactions").cpu().numpy())
+    if num_message_passing_layers > 1:
+        print(
+            f"Message passing layers: {num_message_passing_layers}. Using unfolded calculator."
+        )
+        unf_calc = UnfoldedHeatFluxCalculator(
+            model, device=device, verbose=verbose, dtype=dtype, forward=False, pbc=PBC
+        )
+    else:
+        print(
+            f"Message passing layers: {num_message_passing_layers}. Using conventional calculator."
+        )
+        from mace_unfolded.unfolded_heat.mace_flux_calculator import (
+            MACE_flux_calculator,
+        )
+
+        unf_calc = MACE_flux_calculator(
+            model, device=device, verbose=verbose, dtype=dtype
+        )
 
     # heat_comp_timer = 0
     # heat_out_timer = 0
