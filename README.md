@@ -35,7 +35,7 @@ The periodic boundary conditions `--pbc` determine in which directions the unfol
 With this call the script uses this equation to obtain the potential term of the heat flux:
 
 ```math
-\mathbf{J}_{\mathrm{pot}} = \sum_{\substack{i\in \mathcal{R}_{\mathrm{cell}} \\ j \in \mathcal{R}_{\mathrm{unf}}}} \frac{\partial\mathbf{B}}{\mathbf{\mathbf{r}}_j} \cdot \mathbf{v}_j - \sum_{j \in \mathcal{R}_{\mathrm{unf}}} \mathbf{r}_j \left( \frac{\partial U}{\partial \mathbf{r}}_j \cdot \mathbf{v}_j \right).
+\mathbf{J}_{\mathrm{pot}} = \sum_{ j \in \mathcal{R}_{\mathrm{unf}}} \frac{\partial\mathbf{B}}{\mathbf{\mathbf{r}}_j} \cdot \mathbf{v}_j - \sum_{j \in \mathcal{R}_{\mathrm{unf}}} \mathbf{r}_j \left( \frac{\partial U}{\partial \mathbf{r}}_j \cdot \mathbf{v}_j \right).
 ```
 
 Consult [this paper](https://link.aps.org/doi/10.1103/PhysRevB.108.L100302) for a detailed explanation about the potential term. The values will be stored for each evaluated time step in a file called `heat_flux.dat` in the specified `output_directory_name`. The kinetic portion of the flux will also be computed but output seperately in a file `heat_flux_components.dat`.

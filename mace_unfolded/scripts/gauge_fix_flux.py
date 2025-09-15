@@ -17,7 +17,7 @@
 import numpy as np
 
 # ASE is too slow
-from mace_unfolded.scripts.perform_mace_green_kubo import lammps_dump_reader
+from mace_unfolded.md_tools.fileIO import lammps_dump_reader
 
 from tqdm import tqdm
 import ase.units
