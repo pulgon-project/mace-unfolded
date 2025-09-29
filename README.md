@@ -3,7 +3,8 @@
 Contains calculators for computing the heat flux for MACE. Additionally, features some convenient command line tools for MACE potentials.
 
 The unfolder was originally written for the publication "Marcel F. Langer, Florian Knoop, Christian Carbogno, Matthias Scheffler, and Matthias Rupp
-Phys. Rev. B 108, L100302" and adapted for use with MACE.
+Phys. Rev. B 108, L100302" and adapted for use with MACE in the context of the work described in "S. Wieser, Y. Cen, G. K. H. Madsen, and J. Carrete, Sept. 10, 2025, arXiv: arXiv:2509.08573".
+.
 
 ## Installation
 
