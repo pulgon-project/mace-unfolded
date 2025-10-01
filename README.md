@@ -92,7 +92,7 @@ Where the indices $i$ and $j$ run over all atoms and $k$ over the neighborhood o
 This implements the equation for the local flux set by `full_local_flux=True` and `full_semilocal_flux=False`.
 
 ```math
-\mathbf{J}_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U_j}{\partial \mathbf{r}_{jk}}  \cdot \mathbf{v}_k \right)
+\mathbf{J}_\mathrm{pot} = \sum_{jk} \mathbf{r}_{kj} \left( \frac{\partial U}{\partial \mathbf{r}_{jk}}  \cdot \mathbf{v}_k \right)
 ```
 
 #### Method 3:
