@@ -60,16 +60,11 @@ class UnfoldedHeatFluxCalculator:
 
         # keep it simple for now - assume model was properly loaded
         self.model = model
-        # self.model.training = False  # avoid building graph for second-order derivatives
-        # self.model.return_pairwise = False  # don't need this
-        # disable_property(self.model.model, "derivative")  # we don't need forces
 
-        # self.device, _ = guess_device_settings(device=device)
         self.device = device
         if self.verbose:
             comms.talk(f"UnfoldedHeatFluxCalculator will use device {self.device}.")
 
-        # mace model works in this way thankfully
         self.model.to(self.device)
 
         # set the torch default data type
@@ -140,9 +135,6 @@ class UnfoldedHeatFluxCalculator:
 
         self.reporter.step("unfolding")
         unfolded = self.unfolder(atoms)
-        # print(self.unfolder.unfolding.idx)
-        # print(self.unfolder.unfolding.directions)
-        # print(self.unfolder.unfolding.replica_offsets)
         ase.io.write("POSCAR_unfolding", unfolded.atoms, format="vasp")
         n_unfolded = len(unfolded.atoms)
         
@@ -184,7 +176,6 @@ class UnfoldedHeatFluxCalculator:
             (unfolded.atoms.get_velocities() * units.fs * 1000), dtype=self.dtype
         ).to(self.device)
 
-        # potential_barycenter = torch.sum(r_i.unsqueeze(0) * energies, axis=1)   # this was the original, no idea why the energy has 3 dimensions
         
         unfolded_pos = batch_dict["positions"]
         r_i = unfolded_pos.detach()[:n]
@@ -244,20 +235,8 @@ class UnfoldedHeatFluxCalculator:
             grad([energy], [unfolded_pos], retain_graph=False)[0].detach().squeeze()
         )
 
-        # self.reporter.step("virials (force term) - sanity check")
-        # gradient = (
-        #     grad([energies[0]], [unfolded_pos], retain_graph=False)[0].detach().squeeze()
-        # )
-
-        # this does not appear to be the same thing as the regular forces
-        # I guess the total energy here is different as it also explicitly includes farther away atoms.
-        # So the unfolded_pos[:n] are the same, the atomic energies[:n] are the same but energy not equal energy
-        # and since this is not a local potential the edges cannot be uniquely assigned to an atomic energy
-        # forces = -gradient[:n].detach().cpu().numpy()
 
         inner = torch.sum(gradient * velocities_unfolded, dim=1)
-        # inner = (gradient * velocities_unfolded).sum(axis=1)
-        # inner.unsqueeze(1)
         hf_force_term = torch.sum(
             unfolded_pos[:, self.pbc_indices] * inner.unsqueeze(1), dim=0
         ).detach()
@@ -271,12 +250,6 @@ class UnfoldedHeatFluxCalculator:
             sigma_full_term = sigma_potential_term - sigma_force_term
             hf_from_sigma = torch.einsum("ijk,ik->j", sigma_full_term, velocities_unfolded) / self.volume
             assert torch.allclose(heat_flux, hf_from_sigma, atol=1e-4), f"ERROR: heat flux from sigma is not equal to heat flux from forces {hf_from_sigma} != {heat_flux}"
-        # self.reporter.step("test")
-        # hf_force_term = torch.Tensor([0] * self.num_dim).to(self.device)
-        # jkl = torch.index_select(unfolded_pos, dim=1, index=torch.Tensor([1,2]).to(self.device))
-        # jkl = torch.transpose(unfolded_pos, 0, 1)[test_tens]
-        # asdf = torch.sum(unfolded_pos[:, self.pbc_indices] * inner.unsqueeze(1), dim=0).detach().cpu()
-        # hf_force_term = asdf.detach().cpu().numpy()
         self.reporter.step("finalise")
         
 
