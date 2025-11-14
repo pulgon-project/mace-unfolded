@@ -25,7 +25,7 @@ class lammps_dump_reader:
     Extremely primitive lammps file reader, memory light but probably not very fast.
     The issue with ASE trajectories: they will be loaded fully into the memory.
     Issue with this: file handle remains opened
-    Another issue with this: only supports orthorhombic cells - not true anymore I think
+    Another issue with this: only supports orthorhombic cells - not true anymore I think (use at your own risk)
     """
 
     def __init__(self, filename, num_start=0, unwrap=False):
@@ -40,13 +40,13 @@ class lammps_dump_reader:
             natoms = None
             for i in range(self.num_start):
                 if natoms is None:
-                    for i in range(3):
+                    for j in range(3):
                         self.rline()
                     natoms = int(self.rline())
-                    for i in range(5 + natoms):
+                    for j in range(5 + natoms):
                         self.rline()
                 else:
-                    for i in range(9 + natoms):
+                    for j in range(9 + natoms):
                         self.rline()
 
         return self

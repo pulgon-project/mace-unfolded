@@ -263,13 +263,6 @@ class UnfoldedHeatFluxCalculator:
             "sigma": sigma_full_term.detach().cpu().numpy(),    
             "sigma_potential_term": sigma_potential_term.detach().cpu().numpy(),
             "sigma_force_term": sigma_force_term.detach().cpu().numpy(),
-            # this following return value is consistent with the output from the ASE calculator - why 2 times node_e0? No idea
-            # The offset was already considered in the model. Subtracting it here effectively means that the energy is the interaction energy plus a positive offset. It seems so strange. I would guess there is an error in the MACE ASE calculator.
-            # "heat_flux_convective_term": hf_convective_term,
-            # "energies": (energies - 2 * node_e0[:n])
-            # .detach()
-            # .cpu()
-            # .numpy(),
         }
 
         return self.results

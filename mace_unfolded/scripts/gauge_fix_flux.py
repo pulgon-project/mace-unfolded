@@ -26,7 +26,13 @@ import argparse
 
 
 def perform_fix(
-    flux_file, trajectory_file, sigma_avg_file, fixed_flux_file, invariant_terms_file=None, num_dim=1
+    flux_file,
+    trajectory_file,
+    sigma_avg_file,
+    fixed_flux_file,
+    invariant_terms_file=None,
+    num_dim=1,
+    convective=False,
 ):
     """
     currently implemented for the 1D case
@@ -34,7 +40,14 @@ def perform_fix(
     sigma_data = np.loadtxt(sigma_avg_file, skiprows=1)
     heat_flux = np.loadtxt(flux_file, skiprows=1)
     temperatures = heat_flux[:, 0]
-    heat_flux = heat_flux[:, 1:]
+    if convective:
+        # full potential term plus convective flux
+        heat_flux = (
+            heat_flux[:, (num_dim * 2 + 1) : (num_dim * 3 + 1)]
+            + heat_flux[:, -num_dim:]
+        )
+    else:
+        heat_flux = heat_flux[:, 1:]
     indices = np.array(list(map(int, sigma_data[:, 0])))
     sigma = np.zeros((len(indices), num_dim, 3))
     for i in range(num_dim):
@@ -46,6 +59,7 @@ def perform_fix(
         hfp.write("# Temp flux\n")
         entry_id = 0
         for atoms in tqdm(traj):
+
             velocities = atoms.get_velocities()
             # nw = Nanowire(atoms)
             num_regular = len(atoms)
@@ -107,7 +121,7 @@ def main():
     )
 
     parser.add_argument(
-        "--invariant-terms",
+        "--invariant_terms",
         dest="invariant_terms_file",
         type=str,
         default=None,
@@ -121,12 +135,17 @@ def main():
         default=1,
         help="number of dimensions of the flux",
     )
+    parser.add_argument(
+        "--convective",
+        dest="convective",
+        action="store_true",
+        default=False,
+        help="Also use convective part of the flux, the heat flux file must be the components file. It is recommended to use the full flux for gauge fixing.",
+    )
 
     args = parser.parse_args()
 
-    perform_fix(
-        **vars(args)
-    )
+    perform_fix(**vars(args))
 
 
 if __name__ == "__main__":

@@ -70,8 +70,9 @@ def compute_heat(
         natoms = current_atoms.get_global_number_of_atoms()
         # potential_energies = current_atoms.calc.results["node_energy"]
         potential_energies = unf_calc.results["energies"]
-        mmatrix = np.repeat(current_atoms.get_masses(), 3).reshape((natoms, 3))
-        kinetic_energies = np.sum((velocities**2) * mmatrix / 2, axis=1)
+        kinetic_energies = (
+            np.sum((velocities**2), axis=1) * current_atoms.get_masses() / 2
+        )
         atomic_energies = potential_energies + kinetic_energies * kine_conversion2eV
         hf_convective_term = (
             velocities.T @ atomic_energies
@@ -93,13 +94,14 @@ def compute_heat(
 
         with open(flux_comp_file_name, "a") as hfp:
             wstr = "%18.12f " % temp
-            for quantity in [force_term, pot_term, flux, hf_convective_term]:
+            for quantity in [force_term, pot_term, flux, hf_convective_term[unf_calc.pbc]]:
                 for ind in range(len(quantity)):
                     wstr += "%18.12f " % quantity[ind]
             wstr += "\n"
             hfp.write(wstr)
 
         # sigma processing
+        # TODO: change this such that it outputs the convective flux
         if "sigma" in unf_calc.results.keys():
             idx = unf_calc.unfolder.unfolding.idx
             full_indices = np.concatenate((np.array(range(len(current_atoms))), idx))
