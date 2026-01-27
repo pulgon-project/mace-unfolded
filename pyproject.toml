@@ -27,6 +27,7 @@ version = {attr = "mace_unfolded.__version__"}
 
 [project.scripts]
 mace_perform_green_kubo = "mace_unfolded.scripts.perform_mace_green_kubo:main"
+create_lammps_MACE_heat_model = "mace_unfolded.scripts.create_lammps_model:main"
 gauge_fix_flux = "mace_unfolded.scripts.gauge_fix_flux:main"
 mace_compute_phonons = "mace_unfolded.scripts.compute_mace_phonons:main"
 mace_relax = "mace_unfolded.scripts.relax_mace:main"
