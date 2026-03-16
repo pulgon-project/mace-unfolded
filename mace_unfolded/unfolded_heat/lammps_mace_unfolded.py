@@ -156,7 +156,7 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
         self.initialized = True
 
     def compute_forces(self, data):
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+        #logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         natoms = data.nlocal
         ntotal = data.ntotal
         nghosts = ntotal - natoms
@@ -256,11 +256,6 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
         # we make MACE think all atoms are real
         batch["batch"] = torch.zeros(n_unfolded, dtype=torch.int64, device=self.device)
         # batch["lammps_class"] = None
-        for key in batch:
-            try:
-                print(key, batch[key].shape)
-            except:
-                print(key)
 
         r_i = unfolded_pos.detach()[:n]
         sigma_potential_term = None
@@ -342,7 +337,7 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
         #         f"mass {i}: {masses[i].detach().cpu().numpy()} amu -> {masses[i].detach().cpu().numpy() * amu2kg} kg"
         #     )
         kinetic_energies = torch.sum((velocities**2), axis=1) * masses / 2 * kine2J
-        logging.info(f"kinetic energies: {kinetic_energies.detach().cpu().numpy()}")
+        # logging.info(f"kinetic energies: {kinetic_energies.detach().cpu().numpy()}")
         temperature = torch.mean(kinetic_energies) / kB * 2 / 3
         atomic_energies = energies + kinetic_energies * J2eV
         hf_convective_term = (
