@@ -165,12 +165,9 @@ class MACE_flux_calculator(MACECalculator):
 
             if self.full_semilocal_flux:
                 self.reporter.step("evaluation of dU_k/dr_ij derivatives")
-                # print(batch_dict.keys())
-                # print(batch_dict["vectors"].shape)
                 # contains a 2xN tensor, where N is the number of edges. dim 0 are the atoms in the interaction.
                 # Need to map it back to actual atom indices to compute the heat flux.
                 # essentially this entails the innermost sum over the atoms within the cutoff
-                # print(batch_dict["edge_index"])
                 # the edge indices are R_KJ
                 # unique_indices = torch.unique(batch_dict["edge_index"][0])
                 natoms = batch_dict["forces"].shape[0]
