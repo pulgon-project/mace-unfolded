@@ -156,7 +156,7 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
         self.initialized = True
 
     def compute_forces(self, data):
-        #logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+        # logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         natoms = data.nlocal
         ntotal = data.ntotal
         nghosts = ntotal - natoms
@@ -208,23 +208,35 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
         #     f"n_unfolded: {n_unfolded}, n: {n}, unfolded_pos: {unfolded_pos.shape}, velocities_unfolded: {velocities_unfolded.shape}"
         # )
 
+        # the edges LAMMPS hands us here are NOT reliably bidirectional, this should fix this
+        edge_indices_cat = torch.cat([edge_indices, edge_indices.flip(0)], dim=1)
+        edge_indices = torch.unique(edge_indices_cat.T, dim=0).T
+
         unfolded_pos.requires_grad = True
         ghost_pos = unfolded_pos[n:]
         # Problem 1: the edges are only defined for the actual atoms, no interactions between ghosts, this should not be that hard to remedy considering we don't have to worry about periodic boundary conditions
-        ghost_dist = torch.cdist(
-            ghost_pos, ghost_pos
-        )  # is it faster to just use cdist here in general for all positions?
+        ghost_dist = torch.cdist(ghost_pos, ghost_pos)
+        # NOTE: torch.cdist's diagonal (distance of a ghost atom to itself)
+        # is not always exactly 0 in floating point (catastrophic
+        # cancellation), so masking on `ghost_dist > 0` alone is not a
+        # reliable way to exclude self-pairs -- must exclude the diagonal
+        # structurally via triu, not by value.
         mask = (ghost_dist <= self.rcut) & (ghost_dist > 0)
-        g_i, g_j = torch.triu(mask, diagonal=1).nonzero(as_tuple=True)
+        mask = torch.triu(mask, diagonal=1)
+        g_i, g_j = mask.nonzero(as_tuple=True)
         g_i += n
         g_j += n
-        g_edges = torch.stack(
+        # BUGFIX: only one direction per ghost-ghost pair was being added
+        # (missing the reverse edge needed for correct message passing) --
+        # add both directions explicitly.
+        g_edges_one_dir = torch.stack(
             [
                 g_j,
                 g_i,
             ],
             dim=0,
         )
+        g_edges = torch.cat([g_edges_one_dir, g_edges_one_dir.flip(0)], dim=1)
         edge_indices = torch.concat([edge_indices, g_edges], dim=1)
         # for i in range(len(g_edges[0])):
         #     logging.info(f"ghost edge_indices: {g_edges[0][i]}, {g_edges[1][i]}")
@@ -274,9 +286,9 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
             "ij,i->j", r_i[:, self.pbc_indices], energies
         )
         hf_potential_term = torch.zeros(self.num_dim, device=self.device)
-        # sigma_potential_term = torch.zeros(
-        #     (n_unfolded, self.num_dim, 3), device=self.device
-        # )
+        sigma_potential_term = torch.zeros(
+            (n_unfolded, self.num_dim, 3), device=self.device
+        )
         for alpha in range(self.num_dim):
             tmp = (
                 torch.autograd.grad(
@@ -287,7 +299,7 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
                 .detach()
                 .squeeze()
             )
-            # sigma_potential_term[:, alpha] = tmp
+            sigma_potential_term[:, alpha] = tmp
             hf_potential_term[alpha] = torch.sum(tmp * velocities_unfolded)
 
         energy = torch.sum(energies)
@@ -302,21 +314,18 @@ class LAMMPS_MLIAP_MACE_HEAT(MLIAPUnified):
             unfolded_pos[:, self.pbc_indices] * inner.unsqueeze(1), dim=0
         ).detach()
         heat_flux = hf_potential_term - hf_force_term  # / self.volume
-        # sigma_force_term = None
-        # sigma_full_term = None
-        # if sigma_potential_term is not None:
-        #     sigma_force_term = torch.einsum(
-        #         "ij,ik->ijk", unfolded_pos[:, self.pbc_indices], gradient
-        #     )
-        #     sigma_full_term = sigma_potential_term - sigma_force_term
-        #     hf_from_sigma = (
-        #         torch.einsum("ijk,ik->j", sigma_full_term, velocities_unfolded)
-        #         #/ self.volume
-        #     )
-        #     # we use a lower atol here since we don't divide by the volume
-        #     assert torch.allclose(
-        #         heat_flux, hf_from_sigma, atol=1e-2
-        #     ), f"ERROR: heat flux from sigma is not equal to heat flux from forces {hf_from_sigma} != {heat_flux}"
+        # Self-consistency check: the heat flux computed from forces (above)
+        # must agree with the heat flux computed from the per-atom stress-like
+        # "sigma" tensor.
+        sigma_force_term = torch.einsum(
+            "ij,ik->ijk", unfolded_pos[:, self.pbc_indices], gradient
+        )
+        sigma_full_term = sigma_potential_term - sigma_force_term
+        hf_from_sigma = torch.einsum("ijk,ik->j", sigma_full_term, velocities_unfolded)
+        # we use a lower atol here since we don't divide by the volume
+        assert torch.allclose(
+            heat_flux, hf_from_sigma, atol=1e-2
+        ), f"ERROR: heat flux from sigma is not equal to heat flux from forces {hf_from_sigma} != {heat_flux}"
 
         velocities = velocities_unfolded[:n]
 

@@ -200,3 +200,7 @@ flux_*/
 *.pdf
 
 .vscode
+
+# Local dev/debugging test runs and their results (not for distribution,
+# kept locally as a record of what was tried and what it showed)
+dev_tests/

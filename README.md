@@ -24,21 +24,22 @@ It is helpful to use the `cuequivariance` package for acceleration. The code wil
 
 ### LAMMPS ML-IAP interface
 
-As of version 0.3.15, `mace-unfolded` supports on-the-fly calculation of the heat flux using the LAMMPS ML-IAP interface. This avoids having to build the neighbor list using the native MACE implementation which can be a major bottleneck for larger systems and also avoids having to store enormous trajectory files. Tests revealed that the speedup for system sizes of ~4000 atoms amounts to roughly one order of magnitude. The code requires LAMMPS to compute the neighbor list up to the effective cutoff of a MACE model meaning that the MD simulation itself will be slightly slower. However, for relatively expensive models such as MACE this is just a minor contribution to the total computation time. The "unfolded" connectivity graph in this case is automatically obtained by "ghost" atoms creating in LAMMPS making large parts of the original codebase unnecessary. However, it does require some modifications to the ML-IAP interface. The required files can be found in the `lammps_patch` directory and follow the same directory structure as `lammps/src`. The code was tested for LAMMPS version `22Jul2025` utilizing KOKKOS for GPU support. Modifications may be required for other versions. After recompiling lammps use the script `create_lammps_MACE_heat_model` to create a wrapper model around your MACE that will compute the heat flux. You have to provide the settings for the heat flux calculation at this stage:
+As of version 0.3.15, `mace-unfolded` supports on-the-fly calculation of the heat flux using the LAMMPS ML-IAP interface. This avoids having to build the neighbor list using the native MACE implementation which can be a major bottleneck for larger systems and also avoids having to store enormous trajectory files. Tests revealed that the speedup for system sizes of ~4000 atoms amounts to roughly one order of magnitude. The code requires LAMMPS to compute the neighbor list up to the effective cutoff of a MACE model meaning that the MD simulation itself will be slightly slower. However, for relatively expensive models such as MACE this is just a minor contribution to the total computation time. The "unfolded" connectivity graph in this case is automatically obtained by "ghost" atoms created in LAMMPS making large parts of the original codebase unnecessary. However, it does require some modifications to the ML-IAP interface. The required files can be found in the `lammps_patch` directory and follow the same directory structure as `lammps/src`. The code was tested for LAMMPS version `22Jul2025` utilizing KOKKOS for GPU support. Modifications may be required for other versions. After recompiling lammps use the script `create_lammps_MACE_heat_model` to create a wrapper model around your MACE model that will compute the heat flux while MD is running. You have to provide the settings for the heat flux calculation at this stage:
 
 ```
 create_lammps_MACE_heat_model MACE.model --hf_every 5 --hf_pbc F F T --hf_skip 20000 --hf_dir flux_files
 ```
 
-In this case, the heat flux will be computed every 5 time steps in the Cartesian z direction only while skipping the first 20000 steps and the results will be written in the flux_files directory. To prevent potential issues it is recommended to execute this on the desired GPU hardware.
+In this case, the heat flux will be computed every 5 time steps in the Cartesian z direction only while skipping the first 20000 steps (to allow for equilibration in e.g. NVE) and the results will be written in the flux_files directory. To prevent potential issues it is recommended to execute this on the desired GPU hardware.
 
 Then use the model created by this command in the same way as any regular ML-IAP supported model in your LAMMPS input script:
 
 ```
+comm_modify vel yes
 pair_style      mliap unified MACE.model-mliap_lammps_heat.pt 0
 ```
 
-One difference to the unfolded calculator is that the resulting heat flux will not yet have been divided by the volume as given in the equations below. This has to be accounted for during the subsequent analysis procedure.
+Setting `comm_modify vel yes` is absolutely essential, otherwise the ghost atoms will be passed to the calculator with 0 velocities leading to vastly incorrect results. One difference to the unfolded calculator is that the resulting heat flux will not yet have been divided by the volume as given in the equations below. This has to be accounted for during the subsequent analysis procedure.
 
 ### Unfolded calculator
 
