@@ -460,6 +460,13 @@ def main():
     )
 
     parser.add_argument(
+        "--structure_file",
+        dest="structure_file",
+        type=str,
+        default="POSCAR",
+        help="name of the structure file",
+    )
+    parser.add_argument(
         "--supercell",
         dest="supercell",
         type=int,
